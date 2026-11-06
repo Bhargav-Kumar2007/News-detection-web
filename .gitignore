@@ -1,0 +1,6 @@
+.venv/
+.env
+__pycache__/
+*.pyc
+models/NEWS-detection-using-text/
+models/NEWS-detection-using-image/

@@ -1,0 +1,546 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#ffffff" />
+  <title>NewsLens — Multimodal Fake News Detection (NNDL Research Project)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/styles.css" />
+</head>
+<body>
+  <div class="site-wrapper">
+    <!-- TOP NAVIGATION BAR -->
+    <header class="app-header">
+      <div class="header-container">
+        <a class="brand" href="#demo">
+          <span class="brand-badge">NNDL</span>
+          <span class="brand-name">NewsLens <span class="brand-sub">Research Demo</span></span>
+        </a>
+        <nav class="nav-links">
+          <a class="nav-item active" href="#demo">Live Demo</a>
+          <a class="nav-item" href="#how-it-works">How It Works</a>
+          <a class="nav-item" href="#model-info">Model Information</a>
+        </nav>
+        <div class="header-status">
+          <span class="status-indicator-dot ready" id="globalStatusDot"></span>
+          <span class="status-indicator-text" id="globalStatusText">Models Loaded</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="main-content">
+      <!-- HERO CALLOUT -->
+      <section class="lab-hero">
+        <div class="hero-left">
+          <span class="lab-tag">NEURAL NETWORKS &amp; DEEP LEARNING PROJECT</span>
+          <h1 class="hero-title">Multimodal Fake News Detection</h1>
+          <p class="hero-desc">
+            Dual-branch neural inference architecture combining Optical Character Recognition (RapidOCR), a Bidirectional LSTM text classifier, and a ResNet-18 convolutional image classifier.
+          </p>
+        </div>
+        <div class="hero-badges">
+          <div class="model-badge">
+            <span class="badge-title">TEXT CLASSIFIER</span>
+            <strong class="badge-name">BiLSTM (256 units)</strong>
+            <small>Fakeddit · 81.44% Accuracy</small>
+          </div>
+          <div class="model-badge">
+            <span class="badge-title">IMAGE CLASSIFIER</span>
+            <strong class="badge-name">ResNet-18 CNN</strong>
+            <small>ReCOVery · 90.14% Accuracy</small>
+          </div>
+          <div class="model-badge">
+            <span class="badge-title">OCR ENGINE</span>
+            <strong class="badge-name">RapidOCR (ONNX)</strong>
+            <small>DBNet + CRNN Architecture</small>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================================================== -->
+      <!-- SECTION A: LIVE DEMO -->
+      <!-- ======================================================== -->
+      <section class="section-container" id="demo">
+        <div class="section-header">
+          <div>
+            <span class="section-number">A</span>
+            <h2 class="section-title">Live Multimodal Demonstration</h2>
+            <p class="section-subtitle">Provide a headline and news image to execute real-time OCR extraction, concatenation, and dual-model inference.</p>
+          </div>
+          <div class="quick-samples">
+            <span class="samples-label">QUICK SAMPLES:</span>
+            <button type="button" class="sample-btn" id="sampleFlood">🌊 Flooded Landmark</button>
+            <button type="button" class="sample-btn" id="sampleClickbait">🛸 Clickbait Leak</button>
+            <button type="button" class="sample-btn" id="sampleTransit">🚆 Official Transit</button>
+          </div>
+        </div>
+
+        <div class="demo-grid">
+          <!-- INPUT CARD -->
+          <div class="card input-card">
+            <div class="card-header">
+              <h3 class="card-title">1. Story Inputs</h3>
+              <span class="card-badge">INPUTS</span>
+            </div>
+
+            <form id="analyzeForm">
+              <div class="form-group">
+                <label for="headlineInput" class="form-label">
+                  News Headline
+                  <span class="label-help" id="charCount">0/500 characters</span>
+                </label>
+                <textarea
+                  id="headlineInput"
+                  class="form-textarea"
+                  rows="3"
+                  placeholder="Paste or enter the news headline here..."
+                ></textarea>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">
+                  News Image
+                  <span class="label-help">PNG, JPG, WEBP (Max 12 MB)</span>
+                </label>
+                <label class="drop-zone" id="dropZone" for="imageFileInput">
+                  <input type="file" id="imageFileInput" accept="image/png,image/jpeg,image/webp" hidden />
+                  <div class="drop-placeholder" id="dropPlaceholder">
+                    <span class="drop-icon">📷</span>
+                    <strong class="drop-text">Upload news image for OCR &amp; CNN</strong>
+                    <span class="drop-sub">Drag and drop file here, or click to browse</span>
+                  </div>
+                  <div class="drop-preview hidden" id="dropPreview">
+                    <img id="imagePreviewImg" alt="Selected upload" />
+                    <div class="preview-info">
+                      <strong id="previewFileName">image.png</strong>
+                      <span id="previewFileSize">0 KB</span>
+                      <button type="button" class="remove-btn" id="btnRemoveImage">Remove</button>
+                    </div>
+                  </div>
+                </label>
+              </div>
+
+              <div class="form-actions">
+                <button type="submit" class="btn btn-primary" id="btnAnalyze">
+                  <span id="btnAnalyzeText">Run Multimodal Analysis</span>
+                  <span class="btn-spinner hidden" id="btnSpinner"></span>
+                </button>
+                <button type="button" class="btn btn-secondary" id="btnClear">Clear</button>
+              </div>
+            </form>
+          </div>
+
+          <!-- RESULTS CARD -->
+          <div class="card result-card">
+            <div class="card-header">
+              <h3 class="card-title">2. Model Predictions</h3>
+              <span class="status-pill" id="resultStatusPill">AWAITING INPUT</span>
+            </div>
+
+            <!-- Empty State -->
+            <div class="results-empty" id="resultsEmpty">
+              <span class="empty-icon">📊</span>
+              <h4>No Analysis Run Yet</h4>
+              <p>Enter a headline, upload an image, or click one of the quick samples above, then press <b>Run Multimodal Analysis</b>.</p>
+            </div>
+
+            <!-- Results Content -->
+            <div class="results-content hidden" id="resultsContent">
+              <!-- DUAL INDEPENDENT PREDICTION CARDS -->
+              <div class="predictions-grid">
+                <!-- TEXT MODEL: BiLSTM -->
+                <div class="prediction-box text-box">
+                  <div class="pred-header">
+                    <span class="pred-symbol">T</span>
+                    <div class="pred-meta">
+                      <strong class="pred-model-name">TEXT MODEL — BiLSTM</strong>
+                      <span class="pred-input-desc">Input: Headline + OCR text</span>
+                    </div>
+                    <span class="time-badge" id="textDuration">0.0 ms</span>
+                  </div>
+                  <div class="pred-result-row">
+                    <div class="pred-badge-wrap">
+                      <span class="verdict-tag" id="textVerdictTag">—</span>
+                    </div>
+                    <div class="pred-conf-wrap">
+                      <span class="conf-label">Confidence</span>
+                      <strong class="conf-val" id="textConfVal">—</strong>
+                    </div>
+                  </div>
+                  <div class="progress-bar-wrap">
+                    <div class="progress-bar" id="textProgressBar"></div>
+                  </div>
+                  <div class="prob-splits">
+                    <span>Fake Prob: <b id="textFakeProb">—</b></span>
+                    <span>Real Prob: <b id="textRealProb">—</b></span>
+                  </div>
+                </div>
+
+                <!-- IMAGE MODEL: CNN (ResNet-18) -->
+                <div class="prediction-box image-box">
+                  <div class="pred-header">
+                    <span class="pred-symbol">▧</span>
+                    <div class="pred-meta">
+                      <strong class="pred-model-name">IMAGE MODEL — CNN</strong>
+                      <span class="pred-input-desc">Input: Original 224×224 RGB image</span>
+                    </div>
+                    <span class="time-badge" id="imageDuration">0.0 ms</span>
+                  </div>
+                  <div class="pred-result-row">
+                    <div class="pred-badge-wrap">
+                      <span class="verdict-tag" id="imageVerdictTag">—</span>
+                    </div>
+                    <div class="pred-conf-wrap">
+                      <span class="conf-label">Confidence</span>
+                      <strong class="conf-val" id="imageConfVal">—</strong>
+                    </div>
+                  </div>
+                  <div class="progress-bar-wrap">
+                    <div class="progress-bar cnn-bar" id="imageProgressBar"></div>
+                  </div>
+                  <div class="prob-splits">
+                    <span>Fake Prob: <b id="imageFakeProb">—</b></span>
+                    <span>Real Prob: <b id="imageRealProb">—</b></span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- COMBINED MULTIMODAL SIGNAL -->
+              <div class="combined-signal-box" id="combinedSignalBox">
+                <div class="signal-left">
+                  <span class="signal-tag">FINAL MULTIMODAL SIGNAL</span>
+                  <strong class="signal-verdict" id="signalVerdict">AWAITING OUTPUT</strong>
+                  <span class="signal-agreement" id="signalAgreement">Both branches required for late fusion.</span>
+                </div>
+                <div class="signal-right">
+                  <div class="signal-prob-row">
+                    <span>Combined Fake Prob: <b id="fusionFakeProb">—</b></span>
+                    <span>Combined Real Prob: <b id="fusionRealProb">—</b></span>
+                  </div>
+                  <small class="fusion-formula">Formula: P_fused = (P_text + P_image) / 2</small>
+                </div>
+              </div>
+
+              <!-- Total Pipeline Latency -->
+              <div class="timing-footer">
+                <span>⏱️ Total Execution Time: <b id="totalDuration">0.0 ms</b> (OCR: <span id="ocrDuration">0.0 ms</span> | BiLSTM: <span id="textDurationSub">0.0 ms</span> | CNN: <span id="imageDurationSub">0.0 ms</span>)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ======================================================== -->
+        <!-- LIVE PROCESSING PIPELINE VISUALIZER (Requirement #2) -->
+        <!-- ======================================================== -->
+        <div class="card pipeline-card-wrap">
+          <div class="card-header">
+            <h3 class="card-title">Live Execution Pipeline</h3>
+            <span class="card-badge">REAL-TIME TRACE</span>
+          </div>
+          <div class="pipeline-track">
+            <!-- Text Stream -->
+            <div class="pipeline-row">
+              <span class="stream-label text-stream">TEXT STREAM</span>
+              <div class="steps-flow">
+                <div class="step-node" id="stepInput">
+                  <span class="step-num">01</span>
+                  <strong>User Input</strong>
+                  <small id="stepInputStatus">Awaiting</small>
+                </div>
+                <span class="flow-arrow">→</span>
+                <div class="step-node" id="stepOcr">
+                  <span class="step-num">02</span>
+                  <strong>RapidOCR Text Extraction</strong>
+                  <small id="stepOcrStatus">Awaiting</small>
+                </div>
+                <span class="flow-arrow">→</span>
+                <div class="step-node" id="stepConcat">
+                  <span class="step-num">03</span>
+                  <strong>Headline + OCR Concatenation</strong>
+                  <small id="stepConcatStatus">Awaiting</small>
+                </div>
+                <span class="flow-arrow">→</span>
+                <div class="step-node" id="stepTokenize">
+                  <span class="step-num">04</span>
+                  <strong>Tokenizer &amp; Padding (50)</strong>
+                  <small id="stepTokenizeStatus">Awaiting</small>
+                </div>
+                <span class="flow-arrow">→</span>
+                <div class="step-node" id="stepBiLstm">
+                  <span class="step-num">05</span>
+                  <strong>BiLSTM Inference</strong>
+                  <small id="stepBiLstmStatus">Awaiting</small>
+                </div>
+              </div>
+            </div>
+
+            <!-- Image Stream -->
+            <div class="pipeline-row">
+              <span class="stream-label image-stream">IMAGE STREAM</span>
+              <div class="steps-flow">
+                <div class="step-node" id="stepImageUpload">
+                  <span class="step-num">01</span>
+                  <strong>Image Upload</strong>
+                  <small id="stepImageUploadStatus">Awaiting</small>
+                </div>
+                <span class="flow-arrow">→</span>
+                <div class="step-node" id="stepImagePreprocess">
+                  <span class="step-num">02</span>
+                  <strong>Resize &amp; Crop (224×224 RGB)</strong>
+                  <small id="stepImagePreprocessStatus">Awaiting</small>
+                </div>
+                <span class="flow-arrow">→</span>
+                <div class="step-node" id="stepCnn">
+                  <span class="step-num">03</span>
+                  <strong>ResNet-18 Inference</strong>
+                  <small id="stepCnnStatus">Awaiting</small>
+                </div>
+              </div>
+            </div>
+
+            <!-- Fusion Row -->
+            <div class="pipeline-row fusion-row">
+              <span class="stream-label fusion-stream">MULTIMODAL FUSION</span>
+              <div class="steps-flow">
+                <div class="step-node step-merge" id="stepFusion">
+                  <span class="step-num">06</span>
+                  <strong>Probability Comparison &amp; Late Fusion Signal</strong>
+                  <small id="stepFusionStatus">Awaiting dual outputs</small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ======================================================== -->
+        <!-- TRANSPARENT OCR INSPECTION PANEL (Requirement #5) -->
+        <!-- ======================================================== -->
+        <div class="card ocr-panel-wrap">
+          <div class="card-header">
+            <div>
+              <h3 class="card-title">Transparent OCR &amp; Concatenation Inspection</h3>
+              <p class="card-subtitle">Verify that RapidOCR-extracted text is genuinely concatenated with the headline and delivered to the BiLSTM.</p>
+            </div>
+            <span class="card-badge">VERIFICATION VIEW</span>
+          </div>
+
+          <div class="ocr-inspect-grid">
+            <!-- Box 1: Original Image Preview -->
+            <div class="inspect-box">
+              <span class="inspect-box-title">1. Original Uploaded Image</span>
+              <div class="inspect-image-preview" id="inspectImageContainer">
+                <span class="placeholder-text">No image uploaded</span>
+              </div>
+            </div>
+
+            <!-- Box 2: Extracted OCR Text -->
+            <div class="inspect-box">
+              <div class="inspect-header-row">
+                <span class="inspect-box-title">2. RapidOCR Extracted Text</span>
+                <span class="inspect-badge" id="ocrLinesCount">0 lines</span>
+              </div>
+              <div class="inspect-text-box" id="inspectOcrText">
+                <em>RapidOCR recognition output will appear here.</em>
+              </div>
+              <small class="inspect-sub">Extracted from image pixels using pretrained DBNet + CRNN.</small>
+            </div>
+
+            <!-- Box 3: Final Concatenated Text -->
+            <div class="inspect-box">
+              <div class="inspect-header-row">
+                <span class="inspect-box-title">3. Final Concatenated Text</span>
+                <span class="inspect-badge formula-badge">headline + " " + OCR(image)</span>
+              </div>
+              <div class="inspect-text-box highlight-box" id="inspectCombinedText">
+                <em>Exact concatenated string will appear here.</em>
+              </div>
+              <small class="inspect-sub">Directly fed into the BiLSTM tokenizer pipeline.</small>
+            </div>
+
+            <!-- Box 4: Tokenizer Output -->
+            <div class="inspect-box">
+              <div class="inspect-header-row">
+                <span class="inspect-box-title">4. BiLSTM Preprocessed Tokens</span>
+                <span class="inspect-badge" id="tokensCountBadge">0 tokens</span>
+              </div>
+              <div class="inspect-tokens-box" id="inspectTokensList">
+                <em>Token sequence mapped to vocabulary IDs (padded to 50 tokens).</em>
+              </div>
+              <small class="inspect-sub">Cleaned, tokenized, and encoded by the training tokenizer.</small>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================================================== -->
+      <!-- SECTION B: HOW IT WORKS -->
+      <!-- ======================================================== -->
+      <section class="section-container" id="how-it-works">
+        <div class="section-header">
+          <div>
+            <span class="section-number">B</span>
+            <h2 class="section-title">How It Works</h2>
+            <p class="section-subtitle">Understanding the optical extraction, sequence modeling, and computer vision architectures.</p>
+          </div>
+        </div>
+
+        <div class="cards-grid-3">
+          <!-- Card 1: OCR -->
+          <div class="card explainer-card">
+            <span class="explainer-icon">⌗</span>
+            <h3 class="explainer-title">1. RapidOCR Text Extraction</h3>
+            <p class="explainer-p">
+              RapidOCR runs locally via ONNX Runtime without cloud APIs. It performs <b>DBNet text box detection</b> to locate text in the image, followed by <b>CRNN text recognition</b> to transcribe characters. The extracted string is returned directly to the backend.
+            </p>
+            <div class="explainer-mini-flow">
+              <span>RGB Pixels</span> → <span>DBNet Boxes</span> → <span>CRNN</span> → <span>OCR Text</span>
+            </div>
+          </div>
+
+          <!-- Card 2: BiLSTM -->
+          <div class="card explainer-card">
+            <span class="explainer-icon">T</span>
+            <h3 class="explainer-title">2. BiLSTM Text Classifier</h3>
+            <p class="explainer-p">
+              The headline and OCR text are joined with a space. The tokenizer applies lowercasing, URL replacement, and vocabulary mapping (16,449 words). A 200-dim learned embedding table feeds a <b>Bidirectional LSTM</b> (128 units/dir = 256 total), followed by a dense layer and sigmoid output.
+            </p>
+            <div class="explainer-mini-flow">
+              <span>Headline + OCR</span> → <span>Embedding (200d)</span> → <span>BiLSTM (256d)</span> → <span>Sigmoid</span>
+            </div>
+          </div>
+
+          <!-- Card 3: CNN -->
+          <div class="card explainer-card">
+            <span class="explainer-icon">▧</span>
+            <h3 class="explainer-title">3. ResNet-18 Image Classifier</h3>
+            <p class="explainer-p">
+              The uploaded image is resized and center-cropped to 224×224 RGB, then normalized with ImageNet mean/std. An ImageNet-pretrained <b>ResNet-18</b> extracts deep convolutional feature maps through residual skip connections, outputting 2-class softmax probabilities.
+            </p>
+            <div class="explainer-mini-flow">
+              <span>224×224 RGB</span> → <span>4 Residual Stages</span> → <span>AvgPool</span> → <span>Softmax</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Architecture Flow Diagram -->
+        <div class="card diagram-card">
+          <h3 class="card-title">Multimodal Architecture Pipeline</h3>
+          <p class="card-subtitle">Independent dual-stream processing with late multimodal decision fusion.</p>
+          <div class="diagram-wrap">
+            <div class="dia-box dia-input">User Input<br><small>Headline + Image</small></div>
+            <div class="dia-split">
+              <div class="dia-branch dia-text-branch">
+                <span class="dia-arrow">↓ Image</span>
+                <div class="dia-box dia-ocr">RapidOCR<br><small>DBNet + CRNN</small></div>
+                <span class="dia-arrow">↓ OCR Text + Headline</span>
+                <div class="dia-box dia-tok">Tokenizer<br><small>max_len=50</small></div>
+                <span class="dia-arrow">↓ Token IDs</span>
+                <div class="dia-box dia-bilstm">BiLSTM Network<br><small>Embedding + 2x128 BiLSTM + Dense</small></div>
+                <span class="dia-arrow">↓ P_text(Fake), P_text(Real)</span>
+              </div>
+              <div class="dia-branch dia-img-branch">
+                <span class="dia-arrow">↓ Image</span>
+                <div class="dia-box dia-prep">Image Transform<br><small>Resize 224x224 &amp; Normalize</small></div>
+                <span class="dia-arrow">↓ Tensor [1, 3, 224, 224]</span>
+                <div class="dia-box dia-cnn">ResNet-18 CNN<br><small>4 Residual Stages + AvgPool</small></div>
+                <span class="dia-arrow">↓ P_image(Fake), P_image(Real)</span>
+              </div>
+            </div>
+            <span class="dia-arrow">↓↓ Both Probabilities</span>
+            <div class="dia-box dia-fusion">
+              Multimodal Late Fusion<br>
+              <small>P_fused = (P_text + P_image) / 2</small>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================================================== -->
+      <!-- SECTION C: MODEL INFORMATION -->
+      <!-- ======================================================== -->
+      <section class="section-container" id="model-info">
+        <div class="section-header">
+          <div>
+            <span class="section-number">C</span>
+            <h2 class="section-title">Model Specifications &amp; Limitations</h2>
+            <p class="section-subtitle">Verified architectures, datasets, evaluation metrics, and failure modes from the training repositories.</p>
+          </div>
+        </div>
+
+        <div class="model-info-grid">
+          <!-- Text Model Details -->
+          <div class="card model-detail-card">
+            <div class="detail-header">
+              <span class="detail-icon text-icon">T</span>
+              <div>
+                <h3 class="detail-title">Text Classifier (BiLSTM)</h3>
+                <span class="detail-sub">NEWS-detection-using-text / outputs/bilstm_50k_20ep</span>
+              </div>
+            </div>
+            <table class="specs-table">
+              <tr><th>Architecture</th><td>Embedding (200d) + BiLSTM (128/dir) + Dropout (0.4) + FC (128) + Sigmoid</td></tr>
+              <tr><th>Parameters</th><td>3,693,513 trainable parameters</td></tr>
+              <tr><th>Dataset</th><td>Fakeddit 2-way title dataset (clean_title, 2_way_label)</td></tr>
+              <tr><th>Training Splits</th><td>50,000 train / 5,000 validation / 5,000 test (20 epochs)</td></tr>
+              <tr><th>Best Epoch Metrics</th><td>Val Accuracy: <b>81.44%</b> | F1: <b>79.57%</b> | ROC-AUC: <b>89.63%</b></td></tr>
+              <tr><th>Label Mapping</th><td><b>Label 0 = FAKE</b> &nbsp;|&nbsp; <b>Label 1 = REAL</b></td></tr>
+              <tr class="limitation-row">
+                <th>Limitations &amp; Blind Spots</th>
+                <td>Vocabulary bounded to 16,449 words. Rare geographical proper nouns (e.g. landmarks like "Taj Mahal", local municipalities) are out-of-vocabulary and mapped to <code>&lt;unk&gt;</code>. The model classifies based on surrounding syntax and tone rather than real-world factual status.</td>
+              </tr>
+            </table>
+          </div>
+
+          <!-- Image Model Details -->
+          <div class="card model-detail-card">
+            <div class="detail-header">
+              <span class="detail-icon image-icon">▧</span>
+              <div>
+                <h3 class="detail-title">Image Classifier (ResNet-18)</h3>
+                <span class="detail-sub">NEWS-detection-using-image / outputs/recovery/subset_resnet18</span>
+              </div>
+            </div>
+            <table class="specs-table">
+              <tr><th>Architecture</th><td>ImageNet Pretrained ResNet-18 (4 Residual Stages + Adaptive AvgPool + FC)</td></tr>
+              <tr><th>Parameters</th><td>~11.18 Million parameters</td></tr>
+              <tr><th>Dataset</th><td>ReCOVery News Dataset (reliable vs. unreliable news images)</td></tr>
+              <tr><th>Training Splits</th><td>1,157 train / 137 validation / 142 test (20 epochs)</td></tr>
+              <tr><th>Test Set Metrics</th><td>Test Accuracy: <b>90.14%</b> | Fake Precision: <b>100%</b> | Fake Recall: <b>26.32%</b> | ROC-AUC: <b>76.17%</b></td></tr>
+              <tr><th>Label Mapping</th><td><b>Label 0 = FAKE</b> &nbsp;|&nbsp; <b>Label 1 = REAL</b></td></tr>
+              <tr class="limitation-row">
+                <th>Limitations &amp; Blind Spots</th>
+                <td>Severe class imbalance in training data (~90% real news photos). In held-out testing, 14 of 19 fake news images (73.7%) were misclassified as REAL. High-quality photographic scenes (natural lighting, landmark architecture) trigger authentic news filters, producing high-confidence false negatives on realistic fabricated photos.</td>
+              </tr>
+            </table>
+          </div>
+        </div>
+
+        <!-- Academic Disclaimer -->
+        <div class="card lab-notice-card">
+          <div class="notice-icon">⚠️</div>
+          <div class="notice-text">
+            <strong>Neural Network Interpretability Notice for Examiners:</strong>
+            <p>
+              Neural networks evaluate statistical patterns learned from their training datasets. Model confidence scores reflect internal activation certainty within the feature space, <b>not real-time factual truth</b>. Because neither model possesses an external knowledge graph, realistic fabricated news (e.g., landmark flooding) can produce high-confidence "Real" predictions when linguistic tone and photographic textures mimic authentic reporting.
+            </p>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="app-footer">
+      <div class="footer-container">
+        <span>NewsLens — Neural Networks &amp; Deep Learning Project</span>
+        <span>Verified Trained Models: BiLSTM + ResNet-18 + RapidOCR</span>
+      </div>
+    </footer>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="/assets/app.js"></script>
+</body>
+</html>
